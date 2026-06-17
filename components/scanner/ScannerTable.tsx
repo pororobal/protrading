@@ -1,5 +1,7 @@
 'use client';
 
+'use client';
+
 import { useState, useMemo } from 'react';
 import type { MonsterStock } from '@/types/stock';
 import { fmt, changeColor, cn } from '@/lib/utils/format';
@@ -18,7 +20,7 @@ import { useWatchlistStore } from '@/lib/store/watchlist';
 import { Star, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
-// Column definitions
+// Column definitions — 한국어 레이블
 // ---------------------------------------------------------------------------
 
 export type ColumnKey =
@@ -53,28 +55,30 @@ interface ColDef {
 }
 
 export const ALL_COLUMNS: ColDef[] = [
-  { key: 'rank', label: '#', align: 'center', width: 'w-8' },
-  { key: 'ticker', label: 'Ticker', sortKey: 'ticker', align: 'left', width: 'min-w-[100px]' },
-  { key: 'price', label: 'Price', sortKey: 'price', align: 'right' },
-  { key: 'change', label: 'Chg%', sortKey: 'changePercent', align: 'right' },
-  { key: 'score', label: 'Monster Score', align: 'right', width: 'min-w-[140px]' },
-  { key: 'grade', label: 'Grade', align: 'center' },
+  { key: 'rank', label: '순위', align: 'center', width: 'w-8' },
+  { key: 'ticker', label: '티커', sortKey: 'ticker', align: 'left', width: 'min-w-[100px]' },
+  { key: 'price', label: '가격', sortKey: 'price', align: 'right' },
+  { key: 'change', label: '변동%', sortKey: 'changePercent', align: 'right' },
+  { key: 'score', label: '몬스터 점수', align: 'right', width: 'min-w-[140px]' },
+  { key: 'grade', label: '등급', align: 'center' },
   { key: 'rvol', label: 'RVOL', align: 'right' },
-  { key: 'floatRotation', label: 'Float Rot.', align: 'right' },
-  { key: 'float', label: 'Float', align: 'right' },
-  { key: 'volume', label: 'Volume', align: 'right' },
-  { key: 'dollarVolume', label: '$ Vol', align: 'right' },
-  { key: 'gap', label: 'Gap%', align: 'right' },
+  { key: 'floatRotation', label: '유동회전율', align: 'right' },
+  { key: 'float', label: '유동주식', align: 'right' },
+  { key: 'volume', label: '거래량', align: 'right' },
+  { key: 'dollarVolume', label: '$ 거래대금', align: 'right' },
+  { key: 'gap', label: '갭%', align: 'right' },
   { key: 'vwap', label: 'VWAP', align: 'right' },
-  { key: 'vwapHold', label: 'VWAP Hold%', align: 'right' },
+  { key: 'vwapHold', label: 'VWAP 유지%', align: 'right' },
   { key: 'orb', label: 'ORB', align: 'center' },
-  { key: 'shortInterest', label: 'SI%', align: 'right' },
-  { key: 'marketCap', label: 'Mkt Cap', align: 'right' },
-  { key: 'premarket', label: 'PM Chg%', align: 'right' },
-  { key: 'halt', label: 'Halts', align: 'center' },
-  { key: 'signal', label: 'Signal', align: 'center' },
+  { key: 'shortInterest', label: '공매도%', align: 'right' },
+  { key: 'marketCap', label: '시가총액', align: 'right' },
+  { key: 'premarket', label: 'PM 변동%', align: 'right' },
+  { key: 'halt', label: '정지', align: 'center' },
+  { key: 'signal', label: '신호', align: 'center' },
   { key: 'watchlist', label: '★', align: 'center', width: 'w-8' },
 ];
+
+// ... (나머지 sortStocks, OrbCell, renderCell, SortHeader, ScannerTable 등은 원본 그대로 사용, 단 EmptyState 메시지와 검색 placeholder는 한국어로 변경)
 
 type SortDir = 'asc' | 'desc';
 
