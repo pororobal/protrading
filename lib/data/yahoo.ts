@@ -8,8 +8,7 @@ const QUOTE_SUMMARY_BASE = 'https://query2.finance.yahoo.com/v10/finance/quoteSu
 const CHART_BASE = 'https://query1.finance.yahoo.com/v8/finance/chart';
 const SCREENER_BASE = 'https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved';
 
-const USER_AGENT =
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 type CacheEntry<T> = { data: T; expires: number };
 const cache = new Map<string, CacheEntry<unknown>>();
