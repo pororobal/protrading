@@ -44,7 +44,7 @@ export default function VwapPage() {
   return (
     <div className="p-4 space-y-4 max-w-[1600px]">
       <div>
-        <h1 className="text-base font-bold text-foreground">🌊 VWAP Scanner</h1>
+        <h1 className="text-base font-bold text-foreground">🌊 VWAP 스캐너</h1>
         <p className="text-xs text-muted-foreground mt-0.5">
           Volume-Weighted Average Price analysis — the single most important intraday level for momentum traders.
         </p>
