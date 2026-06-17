@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Base — deep near-black, Bloomberg-style */
+    --background: 220 20% 4%;
+    --foreground: 210 20% 92%;
+
+    --card: 220 18% 7%;
+    --card-foreground: 210 20% 92%;
+
+    --popover: 220 18% 8%;
+    --popover-foreground: 210 20% 92%;
+
+    --primary: 38 92% 50%;        /* amber accent (Bloomberg orange-ish) */
+    --primary-foreground: 220 20% 6%;
+
+    --secondary: 220 14% 14%;
+    --secondary-foreground: 210 20% 92%;
+
+    --muted: 220 14% 12%;
+    --muted-foreground: 215 14% 60%;
+
+    --accent: 199 89% 48%;        /* cyan accent */
+    --accent-foreground: 220 20% 6%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 20% 98%;
+
+    --border: 220 14% 16%;
+    --input: 220 14% 16%;
+    --ring: 38 92% 50%;
+
+    --radius: 0.4rem;
+
+    /* Trading semantics */
+    --bull: 142 76% 45%;
+    --bull-dim: 142 50% 20%;
+    --bear: 0 78% 58%;
+    --bear-dim: 0 50% 22%;
+    --warn: 38 92% 50%;
+
+    /* Grade colors */
+    --grade-sss: 280 90% 65%;
+    --grade-ss: 0 78% 58%;
+    --grade-s: 38 92% 50%;
+    --grade-a: 199 89% 48%;
+    --grade-b: 142 60% 45%;
+    --grade-c: 215 14% 50%;
+
+    --font-mono: 'JetBrains Mono', 'Roboto Mono', ui-monospace, monospace;
+    --font-sans: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: 'tnum' 1, 'lnum' 1;
+  }
+  /* Tabular numbers everywhere — critical for scanner tables */
+  table, .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 9999px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+
+  .text-bull { color: hsl(var(--bull)); }
+  .text-bear { color: hsl(var(--bear)); }
+  .bg-bull-dim { background-color: hsl(var(--bull-dim)); }
+  .bg-bear-dim { background-color: hsl(var(--bear-dim)); }
+
+  .glow-primary {
+    box-shadow: 0 0 12px -2px hsl(var(--primary) / 0.6);
+  }
+}
