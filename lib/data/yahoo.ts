@@ -222,9 +222,11 @@ export async function fetchIntradayBars(symbol: string): Promise<IntradayBar[]> 
     const high = quote.high[i];
     const low = quote.low[i];
     const volume = quote.volume[i];
-    if (close == null || open == null) continue;
+    const time = timestamp[i];          // ✅ time 변수로 분리
+    // ✅ time도 undefined 체크 추가
+    if (close == null || open == null || time == null) continue;
     bars.push({
-      time: timestamp[i],
+      time: time,                       // ✅ number 타입 보장
       open,
       high: high ?? open,
       low: low ?? open,
