@@ -64,15 +64,14 @@ export const GRADE_STYLES: Record<Grade, string> = {
 };
 
 // ---------------------------------------------------------------------------
-// Market status helpers (Eastern Time)
+// Market status helpers (Eastern Time) — 한국어 라벨 반환
 // ---------------------------------------------------------------------------
 
 export function isMarketOpen(): boolean {
   const now = new Date();
-  // Convert to Eastern Time
   const etStr = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
   const et = new Date(etStr);
-  const day = et.getDay(); // 0=Sun, 6=Sat
+  const day = et.getDay();
   if (day === 0 || day === 6) return false;
   const h = et.getHours();
   const m = et.getMinutes();
@@ -93,9 +92,9 @@ export function isPremarket(): boolean {
 }
 
 export function marketStatusLabel(): { label: string; color: string } {
-  if (isMarketOpen()) return { label: 'MARKET OPEN', color: 'text-bull' };
-  if (isPremarket()) return { label: 'PRE-MARKET', color: 'text-warn' };
-  return { label: 'MARKET CLOSED', color: 'text-muted-foreground' };
+  if (isMarketOpen()) return { label: '장 개장', color: 'text-bull' };
+  if (isPremarket()) return { label: '프리마켓', color: 'text-warn' };
+  return { label: '장 마감', color: 'text-muted-foreground' };
 }
 
 export function formatEasternTime(epochMs: number): string {
