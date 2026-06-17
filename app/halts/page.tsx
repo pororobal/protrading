@@ -12,7 +12,7 @@ export default function HaltsPage() {
   return (
     <div className="p-4 space-y-4 max-w-[1600px]">
       <div>
-        <h1 className="text-base font-bold text-foreground">🚨 Halt Monitor</h1>
+        <h1 className="text-base font-bold text-foreground">🚨 거래정지 모니터</h1>
         <p className="text-xs text-muted-foreground mt-0.5">
           Tracks stocks with trading halts (regulatory, volatility, news pending). Multiple halts = extreme momentum.
         </p>
