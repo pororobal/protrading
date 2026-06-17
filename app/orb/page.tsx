@@ -28,7 +28,7 @@ export default function OrbPage() {
   return (
     <div className="p-4 space-y-4 max-w-[1600px]">
       <div>
-        <h1 className="text-base font-bold text-foreground">📊 ORB Scanner</h1>
+        <h1 className="text-base font-bold text-foreground">📊 ORB 스캐너</h1>
         <p className="text-xs text-muted-foreground mt-0.5">
           Opening Range Breakout — stocks that have broken above their early-session high with confirmed volume.
         </p>
