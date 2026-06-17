@@ -65,8 +65,8 @@ export default function DashboardPage() {
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-base font-bold text-foreground">Dashboard</h1>
-          <p className="text-xs text-muted-foreground">Real-time momentum overview — NASDAQ / NYSE / AMEX</p>
+          <h1 className="text-base font-bold text-foreground">대쉬보</h1>
+          <p className="text-xs text-muted-foreground">실시간 모멘텀 개요 — NASDAQ / NYSE / AMEX</p>
         </div>
         <div className="flex items-center gap-2">
           <LiveDot active={!isLoading} />
