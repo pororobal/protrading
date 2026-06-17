@@ -1,21 +1,6 @@
 /**
  * Yahoo Finance data client.
- *
- * IMPORTANT: query1.finance.yahoo.com / query2.finance.yahoo.com endpoints are
- * UNOFFICIAL and undocumented. They are rate-limited and can change or break
- * without notice. This module:
- *   - centralizes all Yahoo calls so providers can be swapped later
- *   - batches quote requests (Yahoo allows comma-separated symbols)
- *   - applies a short in-memory cache to avoid hammering the API
- *   - degrades gracefully (returns null / empty on failure) so the UI
- *     never hard-crashes when Yahoo throttles us
- *
- * For production-grade low-float scanning, consider swapping this module for
- * Polygon.io, Finnhub, IEX Cloud, or Alpaca Market Data — all of which provide
- * official, rate-limit-friendly, real-time float/short-interest/volume data.
- * The rest of the app only depends on the RawQuote[] shape returned here.
  */
-
 import type { RawQuote, IntradayBar } from '@/types/stock';
 
 const QUOTE_BASE = 'https://query1.finance.yahoo.com/v7/finance/quote';
@@ -26,11 +11,6 @@ const SCREENER_BASE = 'https://query1.finance.yahoo.com/v1/finance/screener/pred
 const USER_AGENT =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36';
 
-// ---------------------------------------------------------------------------
-// Simple in-memory cache (per Vercel function instance). Edge/serverless
-// instances are ephemeral, so this mainly helps within a single invocation
-// burst and warm instances — not a substitute for a real cache (KV/Redis).
-// ---------------------------------------------------------------------------
 type CacheEntry<T> = { data: T; expires: number };
 const cache = new Map<string, CacheEntry<unknown>>();
 
@@ -51,10 +31,7 @@ function setCached<T>(key: string, data: T, ttlMs: number) {
 async function fetchJson<T>(url: string, revalidateSeconds = 15): Promise<T | null> {
   try {
     const res = await fetch(url, {
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'application/json',
-      },
+      headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
       next: { revalidate: revalidateSeconds },
     });
     if (!res.ok) {
@@ -98,10 +75,7 @@ interface YahooQuoteResultRaw {
 }
 
 interface YahooQuoteResponse {
-  quoteResponse: {
-    result: YahooQuoteResultRaw[];
-    error: string | null;
-  };
+  quoteResponse: { result: YahooQuoteResultRaw[]; error: string | null };
 }
 
 function mapExchange(fullExchangeName?: string): RawQuote['exchange'] {
@@ -113,9 +87,6 @@ function mapExchange(fullExchangeName?: string): RawQuote['exchange'] {
   return 'OTHER';
 }
 
-/**
- * Fetch quotes for a batch of symbols (Yahoo allows ~50 per request safely).
- */
 export async function fetchQuotes(symbols: string[]): Promise<RawQuote[]> {
   if (symbols.length === 0) return [];
 
@@ -167,7 +138,7 @@ export async function fetchQuotes(symbols: string[]): Promise<RawQuote[]> {
       };
     });
 
-    setCached(cacheKey, mapped, 10_000); // 10s cache
+    setCached(cacheKey, mapped, 10_000);
     results.push(...mapped);
   }
 
@@ -175,7 +146,7 @@ export async function fetchQuotes(symbols: string[]): Promise<RawQuote[]> {
 }
 
 // ---------------------------------------------------------------------------
-// Intraday chart (for VWAP-hold %, ORB breakout calculations)
+// Intraday chart (수정: timestamp undefined 처리)
 // ---------------------------------------------------------------------------
 
 interface YahooChartResponse {
@@ -197,10 +168,6 @@ interface YahooChartResponse {
   };
 }
 
-/**
- * Fetch today's 1-minute intraday bars for a symbol.
- * Returns [] on failure (caller should handle gracefully).
- */
 export async function fetchIntradayBars(symbol: string): Promise<IntradayBar[]> {
   const cacheKey = `intraday:${symbol}`;
   const cached = getCached<IntradayBar[]>(cacheKey);
@@ -222,11 +189,10 @@ export async function fetchIntradayBars(symbol: string): Promise<IntradayBar[]> 
     const high = quote.high[i];
     const low = quote.low[i];
     const volume = quote.volume[i];
-    const time = timestamp[i];          // ✅ time 변수로 분리
-    // ✅ time도 undefined 체크 추가
+    const time = timestamp[i];
     if (close == null || open == null || time == null) continue;
     bars.push({
-      time: time,                       // ✅ number 타입 보장
+      time: time,
       open,
       high: high ?? open,
       low: low ?? open,
@@ -235,27 +201,20 @@ export async function fetchIntradayBars(symbol: string): Promise<IntradayBar[]> 
     });
   }
 
-  setCached(cacheKey, bars, 30_000); // 30s cache
+  setCached(cacheKey, bars, 30_000);
   return bars;
 }
 
 // ---------------------------------------------------------------------------
-// Symbol universe (NASDAQ / NYSE / AMEX small-cap, high-volume movers)
+// Symbol universe
 // ---------------------------------------------------------------------------
 
 interface YahooScreenerResponse {
   finance: {
-    result: Array<{
-      quotes: Array<{ symbol: string }>;
-    }>;
+    result: Array<{ quotes: Array<{ symbol: string }> }>;
   };
 }
 
-/**
- * Yahoo's "predefined screeners" return curated lists like day_gainers,
- * most_actives, small_cap_gainers. These are a reasonable starting universe
- * for a momentum scanner without needing a full exchange symbol dump.
- */
 const PREDEFINED_SCREENERS = [
   'day_gainers',
   'most_actives',
@@ -282,13 +241,9 @@ export async function fetchScreenerSymbols(): Promise<string[]> {
   );
 
   const symbols = Array.from(symbolSet);
-  setCached(cacheKey, symbols, 60_000); // 60s cache
+  setCached(cacheKey, symbols, 60_000);
   return symbols;
 }
-
-// ---------------------------------------------------------------------------
-// SPY benchmark (for relative strength)
-// ---------------------------------------------------------------------------
 
 export async function fetchSpyChangePercent(): Promise<number> {
   const cacheKey = 'spy:change';
