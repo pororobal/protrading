@@ -20,7 +20,7 @@ export default function PremarketPage() {
   return (
     <div className="p-4 space-y-4 max-w-[1600px]">
       <div>
-        <h1 className="text-base font-bold text-foreground">🌅 Premarket Scanner</h1>
+        <h1 className="text-base font-bold text-foreground">🌅 프리마켓 스캐너</h1>
         <p className="text-xs text-muted-foreground mt-0.5">
           Stocks with significant pre-market moves (±5%+). Pre-market catalysts often set the day's direction.
         </p>
