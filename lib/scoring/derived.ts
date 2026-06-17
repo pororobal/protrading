@@ -16,7 +16,8 @@ const ORB_WINDOWS = {
  * then check whether the latest price has broken above it.
  */
 function computeOrbBreakout(bars: IntradayBar[], windowSeconds: number, currentPrice: number): boolean {
-  if (bars.length === 0) return false;
+  // ✅ bars[0] 존재 여부도 함께 체크
+  if (bars.length === 0 || !bars[0]) return false;
   const sessionStart = bars[0].time;
   const windowEnd = sessionStart + windowSeconds;
 
