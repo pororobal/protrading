@@ -33,7 +33,7 @@ export default function FloatRotationPage() {
   return (
     <div className="p-4 space-y-4 max-w-[1600px]">
       <div>
-        <h1 className="text-base font-bold text-foreground">🔄 Float Rotation Scanner</h1>
+        <h1 className="text-base font-bold text-foreground">🔄 유동회전율 스캐너</h1>
         <p className="text-xs text-muted-foreground mt-0.5">
           Float rotation = today's volume ÷ float shares. 10x+ means the entire float has traded 10 times — extraordinary conviction.
         </p>
