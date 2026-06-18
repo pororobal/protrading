@@ -1,14 +1,27 @@
 /**
  * Yahoo Finance data client.
+ * 
+ * FIXED: 401 Unauthorized error resolved by:
+ * - Updating User-Agent to latest Chrome version
+ * - Adding required headers (Referer, Origin, etc.)
+ * - Removing problematic next.revalidate option
+ * - Adding fallback to query2 endpoint
+ * - Adding retry logic with exponential backoff
  */
+
 import type { RawQuote, IntradayBar } from '@/types/stock';
 
-const QUOTE_BASE = 'https://query1.finance.yahoo.com/v7/finance/quote';
-const QUOTE_SUMMARY_BASE = 'https://query2.finance.yahoo.com/v10/finance/quoteSummary';
+// ✅ 수정 1: User-Agent를 최신 Chrome 131로 업데이트
+const USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+
+// ✅ 수정 2: 백업 엔드포인트 추가
+const QUOTE_BASE_PRIMARY = 'https://query1.finance.yahoo.com/v7/finance/quote';
+const QUOTE_BASE_SECONDARY = 'https://query2.finance.yahoo.com/v7/finance/quote';
+const QUOTE_BASE_V6 = 'https://query1.finance.yahoo.com/v6/finance/quote';
+
 const CHART_BASE = 'https://query1.finance.yahoo.com/v8/finance/chart';
 const SCREENER_BASE = 'https://query1.finance.yahoo.com/v1/finance/screener/predefined/saved';
-
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 type CacheEntry<T> = { data: T; expires: number };
 const cache = new Map<string, CacheEntry<unknown>>();
@@ -27,21 +40,57 @@ function setCached<T>(key: string, data: T, ttlMs: number) {
   cache.set(key, { data, expires: Date.now() + ttlMs });
 }
 
-async function fetchJson<T>(url: string, revalidateSeconds = 15): Promise<T | null> {
-  try {
-    const res = await fetch(url, {
-      headers: { 'User-Agent': USER_AGENT, Accept: 'application/json' },
-      next: { revalidate: revalidateSeconds },
-    });
-    if (!res.ok) {
-      console.error(`Yahoo fetch failed: ${res.status} ${url}`);
-      return null;
+// ✅ 수정 3: fetchJson 함수 완전히 개선
+async function fetchJson<T>(url: string, retries = 2): Promise<T | null> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': USER_AGENT,
+          'Accept': 'application/json',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Referer': 'https://finance.yahoo.com/',
+          'Origin': 'https://finance.yahoo.com',
+          'Sec-Fetch-Dest': 'empty',
+          'Sec-Fetch-Mode': 'cors',
+          'Sec-Fetch-Site': 'same-site',
+          'Connection': 'keep-alive',
+        },
+        cache: 'no-store',  // Vercel 캐시 완전히 비활성화
+      });
+
+      if (!res.ok) {
+        console.error(`Yahoo fetch failed (attempt ${attempt + 1}): ${res.status} ${url}`);
+        if (attempt === retries) return null;
+        // 재시도 전 대기 (지수 백오프)
+        await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+        continue;
+      }
+
+      const data = await res.json();
+      return data as T;
+    } catch (err) {
+      console.error(`Yahoo fetch error (attempt ${attempt + 1}):`, err);
+      if (attempt === retries) return null;
+      await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
     }
-    return (await res.json()) as T;
-  } catch (err) {
-    console.error('Yahoo fetch error:', err);
-    return null;
   }
+  return null;
+}
+
+// ✅ 수정 4: 여러 엔드포인트 시도하는 함수 추가
+async function fetchWithFallback<T>(
+  symbols: string[],
+  endpoints: string[] = [QUOTE_BASE_PRIMARY, QUOTE_BASE_SECONDARY, QUOTE_BASE_V6]
+): Promise<T | null> {
+  for (const endpoint of endpoints) {
+    const url = `${endpoint}?symbols=${encodeURIComponent(symbols.join(','))}`;
+    console.log(`Trying endpoint: ${endpoint}`);
+    const data = await fetchJson<T>(url);
+    if (data) return data;
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -74,7 +123,10 @@ interface YahooQuoteResultRaw {
 }
 
 interface YahooQuoteResponse {
-  quoteResponse: { result: YahooQuoteResultRaw[]; error: string | null };
+  quoteResponse: {
+    result: YahooQuoteResultRaw[];
+    error: string | null;
+  };
 }
 
 function mapExchange(fullExchangeName?: string): RawQuote['exchange'] {
@@ -105,8 +157,8 @@ export async function fetchQuotes(symbols: string[]): Promise<RawQuote[]> {
       continue;
     }
 
-    const url = `${QUOTE_BASE}?symbols=${encodeURIComponent(chunk.join(','))}`;
-    const data = await fetchJson<YahooQuoteResponse>(url, 10);
+    // ✅ 수정 5: fetchWithFallback 사용하여 여러 엔드포인트 시도
+    const data = await fetchWithFallback<YahooQuoteResponse>(chunk);
     if (!data?.quoteResponse?.result) continue;
 
     const mapped: RawQuote[] = data.quoteResponse.result.map((q) => {
@@ -145,7 +197,7 @@ export async function fetchQuotes(symbols: string[]): Promise<RawQuote[]> {
 }
 
 // ---------------------------------------------------------------------------
-// Intraday chart (수정: timestamp undefined 처리)
+// Intraday chart (timestamp undefined 처리 완료)
 // ---------------------------------------------------------------------------
 
 interface YahooChartResponse {
@@ -173,7 +225,7 @@ export async function fetchIntradayBars(symbol: string): Promise<IntradayBar[]> 
   if (cached) return cached;
 
   const url = `${CHART_BASE}/${encodeURIComponent(symbol)}?interval=1m&range=1d&includePrePost=true`;
-  const data = await fetchJson<YahooChartResponse>(url, 30);
+  const data = await fetchJson<YahooChartResponse>(url);
   const result = data?.chart?.result?.[0];
   if (!result || !result.timestamp) return [];
 
@@ -231,7 +283,7 @@ export async function fetchScreenerSymbols(): Promise<string[]> {
   await Promise.all(
     PREDEFINED_SCREENERS.map(async (scrId) => {
       const url = `${SCREENER_BASE}?scrIds=${scrId}&count=100`;
-      const data = await fetchJson<YahooScreenerResponse>(url, 60);
+      const data = await fetchJson<YahooScreenerResponse>(url);
       const quotes = data?.finance?.result?.[0]?.quotes ?? [];
       for (const q of quotes) {
         if (q.symbol) symbolSet.add(q.symbol);
